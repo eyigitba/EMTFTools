@@ -118,6 +118,7 @@ class EMTFNtuple : public edm::one::EDAnalyzer<edm::one::SharedResources> {
     void fillTree();
     void makeTree();
     void printDebugOutput();
+    bool isFront(int station, int ring, int chamber, int subsystem);
 
     template <typename T> edm::Handle<T> make_handle(T &t) {
         return edm::Handle<T>();
@@ -372,7 +373,10 @@ class EMTFNtuple : public edm::one::EDAnalyzer<edm::one::SharedResources> {
     std::unique_ptr<std::vector<int16_t>> emtfHit_fr;
     std::unique_ptr<std::vector<int32_t>> emtfHit_emtf_phi;   // integer unit
     std::unique_ptr<std::vector<int32_t>> emtfHit_emtf_theta; // integer unit
-    //
+    // Run-3 CSC
+    std::unique_ptr<std::vector<int32_t>> emtfHit_slope; // Run-3 CSC
+    std::unique_ptr<std::vector<int32_t>> emtfHit_run3_pattern; // Run-3 CSC
+
     std::unique_ptr<std::vector<float>> emtfHit_sim_phi;   // in degrees
     std::unique_ptr<std::vector<float>> emtfHit_sim_theta; // in degrees
     std::unique_ptr<std::vector<float>> emtfHit_sim_r;     // in cm

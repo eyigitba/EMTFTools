@@ -317,9 +317,12 @@ void EMTFNtuple::analyze(const edm::Event &iEvent,
         emtfHit_pattern->push_back(hit.Pattern());
         emtfHit_bend->push_back(hit.Bend());
         emtfHit_time->push_back(hit.Time());
-        // emtfHit_fr         ->push_back(isFront(hit));
+        emtfHit_fr->push_back(isFront(hit.Station(), hit.Ring(), hit.Chamber(), hit.Subsystem()));
         emtfHit_emtf_phi->push_back(hit.Phi_fp());
         emtfHit_emtf_theta->push_back(hit.Theta_fp());
+        // Run-3 CSC
+        emtfHit_slope->push_back(hit.Slope());
+        emtfHit_run3_pattern->push_back(hit.Pattern_run3());
         //
         emtfHit_sim_phi->push_back(hit.Phi_sim());
         emtfHit_sim_theta->push_back(hit.Theta_sim());
@@ -1686,7 +1689,11 @@ void EMTFNtuple::makeTree() {
     emtfHit_emtf_phi = std::make_unique<std::vector<int32_t>>(); // integer unit
     emtfHit_emtf_theta =
         std::make_unique<std::vector<int32_t>>(); // integer unit
-    //
+    // Run-3 CSC
+    emtfHit_slope =
+        std::make_unique<std::vector<int32_t>>(); // integer unit
+    emtfHit_run3_pattern =
+        std::make_unique<std::vector<int32_t>>(); // integer unit
     emtfHit_sim_phi = std::make_unique<std::vector<float>>();
     emtfHit_sim_theta = std::make_unique<std::vector<float>>();
     emtfHit_sim_r = std::make_unique<std::vector<float>>();
@@ -2040,6 +2047,9 @@ void EMTFNtuple::makeTree() {
         tree->Branch("emtfHit_fr", &(*emtfHit_fr));
         tree->Branch("emtfHit_emtf_phi", &(*emtfHit_emtf_phi));
         tree->Branch("emtfHit_emtf_theta", &(*emtfHit_emtf_theta));
+        // Run -3 CSC
+        tree->Branch("emtfHit_slope", &(*emtfHit_slope));
+        tree->Branch("emtfHit_run3_pattern", &(*emtfHit_run3_pattern));
         //
         tree->Branch("emtfHit_sim_phi", &(*emtfHit_sim_phi));
         tree->Branch("emtfHit_sim_theta", &(*emtfHit_sim_theta));
@@ -2404,6 +2414,9 @@ void EMTFNtuple::fillTree() {
     emtfHit_fr->clear();
     emtfHit_emtf_phi->clear();
     emtfHit_emtf_theta->clear();
+    // Run-3 CSC
+    emtfHit_slope->clear();
+    emtfHit_run3_pattern->clear();
     //
     emtfHit_sim_phi->clear();
     emtfHit_sim_theta->clear();
@@ -2721,6 +2734,30 @@ void EMTFNtuple::printDebugOutput() {
     }
 
 }
+
+bool EMTFNtuple::isFront(int station, int ring, int chamber, int subsystem) {
+    // // RPCs are behind the CSCs in stations 1, 3, and 4; in front in 2
+    // if (subsystem == TriggerPrimitive::kRPC)
+    //   return (station == 2);
+
+    // In EMTF firmware, RPC hits are treated as if they came from the corresponding
+    // CSC chamber, so the FR bit assignment is the same as for CSCs - AWB 06.06.17
+
+    // GEMs are in front of the CSCs
+    if (subsystem == L1TMuon::kGEM)
+      return true;
+
+    bool result = false;
+    bool isOverlapping = !(station == 1 && ring == 3);
+    // not overlapping means back
+    if (isOverlapping) {
+      bool isEven = (chamber % 2 == 0);
+      // odd chambers are bolted to the iron, which faces
+      // forward in 1&2, backward in 3&4, so...
+      result = (station < 3) ? isEven : !isEven;
+    }
+    return result;
+  };
 
 // -------------------------------------------------------
 // define this as a plug-in
